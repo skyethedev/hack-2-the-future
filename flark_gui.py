@@ -2,11 +2,7 @@ import tkinter as tk
 from tkinter import simpledialog
 from PIL import Image, ImageTk
 import os
-import time
 import random
-import threading
-import pystray
-from pystray import MenuItem as item
 
 # Import our logic
 from state_machine import FlarkState
@@ -44,14 +40,23 @@ class FlarkApp:
         self.y = 0
         self.is_dragging = False
         
-        # Load sprites mapping
-        self.skin = self.config.get("skin", "classic")
-        self.sprites = {}
-        self.load_sprites()
+        self.animation_assets = {}
+        self.animation_frames = []
+        self.animation_index = 0
+        self.animation_job = None
+        self.current_visual_key = None
+        self.load_animation_assets()
         
         # UI Elements
-        self.image_label = tk.Label(self.root, bg=self.transparent_color)
+        self.image_label = tk.Label(
+            self.root,
+            bg=self.transparent_color,
+            bd=0,
+            highlightthickness=0,
+            relief=tk.FLAT,
+        )
         self.image_label.pack(expand=True, fill=tk.BOTH)
+        self.image_label.bind("<Configure>", self.on_image_label_resize)
         
         # Text Bubble (Level 1 punishment or just info)
         # Using a styled label to look like a simple speech bubble
@@ -61,6 +66,7 @@ class FlarkApp:
         
         self._hide_bubble_timer = None
         self.current_frame = None
+        self.is_talking = False
         self.update_sprite()
         
         # Load custom dialogues
@@ -75,37 +81,89 @@ class FlarkApp:
         # Start the update loop for the state machine
         self.update_loop()
         
-    def load_sprites(self):
-        # We will use simple placeholders if actual sprites don't exist
-        skin_dir = os.path.join(os.path.dirname(__file__), "sprites", self.skin)
-        
-        # Mapping state to a color for the placeholder
-        state_colors = {
-            FlarkState.DEEP_WORK: "blue",
-            FlarkState.BREAK_TIME: "green",
-            FlarkState.NEGLECT: "red",
-            FlarkState.LATE_NIGHT: "purple",
-            FlarkState.HEALTHY: "cyan"
+    def load_animation_assets(self):
+        anim_dir = os.path.join(os.path.dirname(__file__), "anim")
+        self.animation_assets = {
+            "idle_happy": self._load_gif_frames(os.path.join(anim_dir, "Idle.gif")),
+            "idle_angry": self._load_gif_frames(os.path.join(anim_dir, "Evil_Idle.gif")),
+            "talk_happy": self._load_static_image(os.path.join(anim_dir, "Happy_Talking.png")),
+            "talk_angry": self._load_static_image(os.path.join(anim_dir, "Angry_Talking.png")),
         }
-        
-        os.makedirs(skin_dir, exist_ok=True)
-        
-        for state, color in state_colors.items():
-            img_path = os.path.join(skin_dir, f"{state.replace(' ', '_').lower()}.png")
-            if not os.path.exists(img_path):
-                # Auto-generate placeholder
-                img = Image.new('RGBA', (100, 100), color=color)
-                # To test transparency, we could make it a circle
-                from PIL import ImageDraw
-                draw = ImageDraw.Draw(img)
-                # Draw a smaller circle in the middle
-                draw.ellipse((10, 10, 90, 90), fill=color, outline="black")
-                # Make background magenta (which will be keyed out)
-                bg = Image.new('RGBA', (100, 100), color=(255, 0, 255, 255))
-                bg.paste(img, (0, 0), img)
-                bg.save(img_path)
-            
-            self.sprites[state] = ImageTk.PhotoImage(Image.open(img_path))
+
+    def _load_static_image(self, path):
+        return self._trim_transparent_padding(Image.open(path).convert("RGBA"))
+
+    def _load_gif_frames(self, path):
+        gif = Image.open(path)
+        frames = []
+        durations = []
+        try:
+            while True:
+                frame = self._trim_transparent_padding(gif.copy().convert("RGBA"))
+                frames.append(frame)
+                durations.append(gif.info.get("duration", 100))
+                gif.seek(gif.tell() + 1)
+        except EOFError:
+            pass
+
+        if not frames:
+            raise ValueError(f"No frames found in GIF: {path}")
+
+        return {"frames": frames, "durations": durations}
+
+    def _trim_transparent_padding(self, image):
+        alpha_bbox = image.getchannel("A").getbbox()
+        if alpha_bbox is None:
+            return image
+        return image.crop(alpha_bbox)
+
+    def _is_angry_state(self, state):
+        return state in {FlarkState.NEGLECT, FlarkState.LATE_NIGHT}
+
+    def _get_visual_key(self):
+        state = self.state_machine.current_state
+
+        if self.is_talking:
+            return "talk_angry" if self._is_angry_state(state) else "talk_happy"
+
+        return "idle_angry" if state == FlarkState.NEGLECT else "idle_happy"
+
+    def _cancel_animation(self):
+        if self.animation_job is not None:
+            self.root.after_cancel(self.animation_job)
+            self.animation_job = None
+
+    def _get_target_size(self):
+        width = max(1, self.image_label.winfo_width())
+        height = max(1, self.image_label.winfo_height())
+
+        if width <= 1 or height <= 1:
+            width = max(1, self.root.winfo_width())
+            height = max(1, self.root.winfo_height())
+
+        return width, height
+
+    def _resize_image(self, image):
+        target_width, target_height = self._get_target_size()
+        width, height = image.size
+        scale = min(target_width / width, target_height / height)
+        scale = max(scale, 0.01)
+        new_size = (max(1, int(width * scale)), max(1, int(height * scale)))
+        return image.resize(new_size, Image.Resampling.LANCZOS)
+
+    def _animate_current_gif(self):
+        if not self.animation_source_frames:
+            return
+
+        frame = self._resize_image(self.animation_source_frames[self.animation_index])
+        self.current_frame = ImageTk.PhotoImage(frame)
+        self.image_label.config(image=self.current_frame)
+        delay = self.animation_durations[self.animation_index]
+        self.animation_index = (self.animation_index + 1) % len(self.animation_source_frames)
+        self.animation_job = self.root.after(max(20, delay), self._animate_current_gif)
+
+    def on_image_label_resize(self, event):
+        self.update_sprite(force=True)
 
     def start_drag(self, event):
         self.x = event.x
@@ -134,9 +192,17 @@ class FlarkApp:
         # Place it nicely near the top center
         self.bubble_label.place(relx=0.5, rely=0.05, anchor="n")
         self.bubble_label.lift()
+        self.is_talking = True
+        self.update_sprite()
         
         if duration_ms > 0:
-            self._hide_bubble_timer = self.root.after(duration_ms, self.bubble_label.place_forget)
+            self._hide_bubble_timer = self.root.after(duration_ms, self.hide_bubble)
+
+    def hide_bubble(self):
+        self.bubble_label.place_forget()
+        self._hide_bubble_timer = None
+        self.is_talking = False
+        self.update_sprite()
 
     def show_context_menu(self, event):
         menu = tk.Menu(self.root, tearoff=0)
@@ -226,17 +292,33 @@ class FlarkApp:
         
         self.root.after(1000, self.update_loop)
 
-    def update_sprite(self):
-        state = self.state_machine.current_state
-        if state in self.sprites:
-            self.image_label.config(image=self.sprites[state])
+    def update_sprite(self, force=False):
+        visual_key = self._get_visual_key()
+        if visual_key == self.current_visual_key and not force:
+            return
+
+        self.current_visual_key = visual_key
+        self._cancel_animation()
+
+        asset = self.animation_assets[visual_key]
+        if visual_key.startswith("idle_"):
+            self.animation_source_frames = asset["frames"]
+            self.animation_durations = asset["durations"]
+            self.animation_index = 0
+            self._animate_current_gif()
+        else:
+            self.animation_source_frames = []
+            self.animation_durations = []
+            resized = self._resize_image(asset)
+            self.current_frame = ImageTk.PhotoImage(resized)
+            self.image_label.config(image=self.current_frame)
 
     def apply_punishments(self):
         level = self.state_machine.get_punishment_level()
         
         # Reset previous punishments if level drops
         if level < 1 and self.bubble_label.winfo_ismapped():
-            self.bubble_label.place_forget()
+            self.hide_bubble()
             
         if level >= 1:
             # Passive aggressive texts
