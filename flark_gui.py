@@ -2,8 +2,10 @@ import tkinter as tk
 from tkinter import simpledialog
 from PIL import Image, ImageTk
 import os
+import webbrowser
+import winsound
 import random
-
+import time
 # Import our logic
 from state_machine import FlarkState
 
@@ -314,6 +316,12 @@ class FlarkApp:
             self.image_label.config(image=self.current_frame)
 
     def apply_punishments(self):
+        # Only apply punishments if currently in NEGLECT state
+        if self.state_machine.current_state != FlarkState.NEGLECT:
+            if self.bubble_label.winfo_ismapped():
+                self.hide_bubble()
+            return
+
         level = self.state_machine.get_punishment_level()
         
         # Reset previous punishments if level drops
@@ -333,13 +341,45 @@ class FlarkApp:
                     self.say(random.choice(messages), 3000)
                 
         if level >= 2:
-            # Wandering / shaking
-            # if random.random() < 0.1:
-                dx = random.randint(-20, 20)
-                dy = random.randint(-20, 20)
-                nx = self.root.winfo_x() + dx
-                ny = self.root.winfo_y() + dy
-                self.root.geometry(f"+{nx}+{ny}")
+            # Violent shaking back and forth
+            orig_x = self.root.winfo_x()
+            orig_y = self.root.winfo_y()
+            for _ in range(15):
+                dx = random.randint(-40, 40)
+                dy = random.randint(-40, 40)
+                self.root.geometry(f"+{orig_x + dx}+{orig_y + dy}")
+                self.root.update()
+                time.sleep(0.03)
+            # End up slightly displaced so he still wanders
+            nx = orig_x + random.randint(-15, 15)
+            ny = orig_y + random.randint(-15, 15)
+            self.root.geometry(f"+{nx}+{ny}")
+            random_action = random.randint(1,2) 
+            winsound.MessageBeep(winsound.MB_ICONEXCLAMATION)
+
+            if random_action == 1:
+                random_link = random.randint(1,8)
+                winsound.MessageBeep(winsound.MB_ICONEXCLAMATION)
+
+                if random_link == 2:
+                    winsound.MessageBeep(winsound.MB_ICONEXCLAMATION)
+                    webbrowser.open("https://www.google.com/search?q=failure+clipart&client=firefox-b-d&hs=UJZp&udm=2&uact=5&oq=failure+clipart", new=1, autoraise=True)
+                if random_link ==3:
+                    winsound.MessageBeep(winsound.MB_ICONEXCLAMATION)
+                    webbrowser.open("https://img.freepik.com/premium-vector/disappointed-emoji-emoticon-showing-paper-with-f-failure-grade_1303870-1160.jpg", new=1, autoraise=True)
+                if random_link ==4:
+                    winsound.MessageBeep(winsound.MB_ICONEXCLAMATION)
+                    webbrowser.open("https://thumbs.dreamstime.com/b/children-education-learning-concept-sad-student-boy-failed-school-test-home-sad-student-boy-failed-school-test-190309014.jpg", new=1, autoraise=True)
+                if random_link ==5:
+                    winsound.MessageBeep(winsound.MB_ICONEXCLAMATION)
+                    webbrowser.open("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTVEAXYLsIgrSi0xUSA1dijt7Pip0BLV6AMrw&s", new=1, autoraise=True)
+                if random_link ==6:
+                    winsound.MessageBeep(winsound.MB_ICONEXCLAMATION)
+                    webbrowser.open("https://c8.alamy.com/comp/JPXEX2/angry-man-standing-in-the-road-waving-his-walking-stick-JPXEX2.jpg", new=1, autoraise=True)
+                if random_link ==7:
+                    winsound.MessageBeep(winsound.MB_ICONEXCLAMATION)
+                    webbrowser.open("https://thumbs.dreamstime.com/b/angry-d-man-white-background-209674670.jpg", new=1, autoraise=True)
+
                 
         if level >= 3:
             # Annoying level! Clear clipboard every 10 seconds?
@@ -360,7 +400,6 @@ class FlarkApp:
                         self.say(random.choice(chomp_msgs), 2000)
                     
                     # Beep sound (Windows)
-                    import winsound
                     winsound.MessageBeep(winsound.MB_ICONEXCLAMATION)
         if level >= 4:
             self.say("I died, so does your system ;)")

@@ -46,44 +46,46 @@ class StateMachine:
         work_apps = [app.lower() for app in self.config.get("work_apps", [])]
         distracting_apps = [app.lower() for app in self.config.get("distracting_apps", [])]
 
-        if active_window:
-            if any(app in active_window for app in work_apps):
-                # If they are working during their break, Flark gets mad!
-                if self.timer.is_running and not self.timer.is_work_time:
-                    self._set_state(FlarkState.NEGLECT)
-                    if not hasattr(self, '_overwork_ticks'):
-                        self._overwork_ticks = 0
-                    self._overwork_ticks += 1
-                    if self._overwork_ticks >= 5:
-                        self.health_system.damage(5)
-                        self._overwork_ticks = 0
-                    return
-                else:
-                    self._set_state(FlarkState.DEEP_WORK)
-                    self.last_work_end_time = None
-                    self.break_in_progress = False
-                    # Auto-start the timer organically if it wasn't running
-                    if not self.timer.is_running and self.timer.is_work_time:
-                        self.timer.start()
-                        
-                    if not hasattr(self, '_work_ticks'):
-                        self._work_ticks = 0
-                    self._work_ticks += 1
-                    if self._work_ticks >= 5:
-                        self.health_system.heal(1)
-                        self._work_ticks = 0
-                    return
+        is_work_app = active_window and any(app in active_window for app in work_apps)
+        is_distracting_app = any(app in active_window for app in distracting_apps)
+
+        if is_work_app:
+            # If they are working during their break, Flark gets mad!
+            if self.timer.is_running and not self.timer.is_work_time:
+                self._set_state(FlarkState.NEGLECT)
+                if not hasattr(self, '_overwork_ticks'):
+                    self._overwork_ticks = 0
+                self._overwork_ticks += 1
+                if self._overwork_ticks >= 2:
+                    self.health_system.damage(5)
+                    self._overwork_ticks = 0
+                return
+            else:
+                self._set_state(FlarkState.DEEP_WORK)
+                self.last_work_end_time = None
+                self.break_in_progress = False
+                # Auto-start the timer organically if it wasn't running
+                if not self.timer.is_running and self.timer.is_work_time:
+                    self.timer.start()
+                    
+                if not hasattr(self, '_work_ticks'):
+                    self._work_ticks = 0
+                self._work_ticks += 1
+                if self._work_ticks >= 5:
+                    self.health_system.heal(1)
+                    self._work_ticks = 0
+                return
                 
-            if any(app in active_window for app in distracting_apps):
-                if self.timer.is_running and self.timer.is_work_time:
-                    self._set_state(FlarkState.NEGLECT)
-                    if not hasattr(self, '_distraction_ticks'):
-                        self._distraction_ticks = 0
-                    self._distraction_ticks += 1
-                    if self._distraction_ticks >= 5:  # 5 seconds of continuous distraction
-                        self.health_system.damage(5)
-                        self._distraction_ticks = 0
-                    return
+        if is_distracting_app:
+            if self.timer.is_running and self.timer.is_work_time:
+                self._set_state(FlarkState.NEGLECT)
+                if not hasattr(self, '_distraction_ticks'):
+                    self._distraction_ticks = 0
+                self._distraction_ticks += 1
+                if self._distraction_ticks >= 2:  # 5 seconds of continuous distraction
+                    self.health_system.damage(5)
+                    self._distraction_ticks = 0
+                return
 
         # 2. Check Deep Work
         if self.timer.is_running and self.timer.is_work_time:

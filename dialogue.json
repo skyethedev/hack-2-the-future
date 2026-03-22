@@ -50,10 +50,8 @@
   },
   "punishments": {
     "level_1": [
-      "You skipped a break, seriously?",
-      "My health is dropping!",
-      "You're going to burn out.",
-      "Please take a break."
+      "You're making me mad!!!",
+      "My health is dropping!"
     ],
     "clipboard_chomp": [
       "*CHOMP* Your clipboard tasted good!",

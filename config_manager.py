@@ -10,8 +10,8 @@ class ConfigManager:
             "break_duration": 5,
             "strict_mode": False,
             "skin": "classic",
-            "work_apps": ["Visual Studio", "Code", "Docs", "Word", "Cursor", "Notepad", "Stack Overflow", "GitHub", "ChatGPT", "Google",],
-            "distracting_apps": ["YouTube", "Twitter", "X", "Reddit", "Netflix", "TikTok", "Instagram"]
+            "work_apps": ["Visual Studio", "Code", "Docs", "Word", "Cursor", "Notepad", "Stack Overflow", "GitHub", "ChatGPT", "Google Slides" ],
+            "distracting_apps": ["YouTube", "Twitter", "X", "Reddit", "Netflix", "TikTok", "Instagram", "clipart", "jpg", "JPEG", "blank", "desktop", "", "program manager" ]
         }
         self.config = self.load_config()
 
