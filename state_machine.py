@@ -1,6 +1,7 @@
 import time
 import datetime
-
+from window_tracker import get_active_window_title
+import os
 class FlarkState:
     DEEP_WORK = "Deep Work"
     BREAK_TIME = "Break Time"
@@ -40,17 +41,75 @@ class StateMachine:
             self._set_state(FlarkState.LATE_NIGHT)
             return
 
+        # 1.5. Check Active Window overrides
+        active_window = get_active_window_title().lower()
+        work_apps = [app.lower() for app in self.config.get("work_apps", [])]
+        distracting_apps = [app.lower() for app in self.config.get("distracting_apps", [])]
+
+        if active_window:
+            if any(app in active_window for app in work_apps):
+                # If they are working during their break, Flark gets mad!
+                if self.timer.is_running and not self.timer.is_work_time:
+                    self._set_state(FlarkState.NEGLECT)
+                    if not hasattr(self, '_overwork_ticks'):
+                        self._overwork_ticks = 0
+                    self._overwork_ticks += 1
+                    if self._overwork_ticks >= 5:
+                        self.health_system.damage(5)
+                        self._overwork_ticks = 0
+                    return
+                else:
+                    self._set_state(FlarkState.DEEP_WORK)
+                    self.last_work_end_time = None
+                    self.break_in_progress = False
+                    # Auto-start the timer organically if it wasn't running
+                    if not self.timer.is_running and self.timer.is_work_time:
+                        self.timer.start()
+                        
+                    if not hasattr(self, '_work_ticks'):
+                        self._work_ticks = 0
+                    self._work_ticks += 1
+                    if self._work_ticks >= 5:
+                        self.health_system.heal(1)
+                        self._work_ticks = 0
+                    return
+                
+            if any(app in active_window for app in distracting_apps):
+                if self.timer.is_running and self.timer.is_work_time:
+                    self._set_state(FlarkState.NEGLECT)
+                    if not hasattr(self, '_distraction_ticks'):
+                        self._distraction_ticks = 0
+                    self._distraction_ticks += 1
+                    if self._distraction_ticks >= 5:  # 5 seconds of continuous distraction
+                        self.health_system.damage(5)
+                        self._distraction_ticks = 0
+                    return
+
         # 2. Check Deep Work
         if self.timer.is_running and self.timer.is_work_time:
             self._set_state(FlarkState.DEEP_WORK)
             self.last_work_end_time = None
             self.break_in_progress = False
+            
+            if not hasattr(self, '_work_ticks'):
+                self._work_ticks = 0
+            self._work_ticks += 1
+            if self._work_ticks >= 5:
+                self.health_system.heal(1)
+                self._work_ticks = 0
             return
             
         # 3. Check Break Time
         if self.timer.is_running and not self.timer.is_work_time:
             self._set_state(FlarkState.BREAK_TIME)
             self.break_in_progress = True
+            
+            if not hasattr(self, '_rest_ticks'):
+                self._rest_ticks = 0
+            self._rest_ticks += 1
+            if self._rest_ticks >= 5:
+                self.health_system.heal(1)
+                self._rest_ticks = 0
             return
 
         # 4. Check Neglect
@@ -99,7 +158,8 @@ class StateMachine:
     def _set_state(self, new_state):
         if self.current_state != new_state:
             self.current_state = new_state
-            print(f"Flark shifted to state: {self.current_state} (HP: {self.health_system.health})")
+            mins, secs = divmod(self.timer.time_left, 60)
+            print(f"Flark shifted to state: {self.current_state} (HP: {self.health_system.health}) | Time Remaining: {mins:02d}:{secs:02d}")
 
     def get_punishment_level(self):
         """Returns 0, 1, 2, or 3 based on health."""
@@ -109,5 +169,9 @@ class StateMachine:
             return 1 # Level 1
         elif self.health_system.health > 20:
             return 2 # Level 2
-        else:
+        elif self.health_system.health > 15:
             return 3 # Level 3
+        elif self.health_system.health == 0:
+            return 4
+        else:
+            return 3

@@ -9,7 +9,9 @@ class ConfigManager:
             "work_duration": 25,
             "break_duration": 5,
             "strict_mode": False,
-            "skin": "classic"
+            "skin": "classic",
+            "work_apps": ["Visual Studio", "Code", "Docs", "Word", "Cursor", "Notepad", "Stack Overflow", "GitHub", "ChatGPT", "Google",],
+            "distracting_apps": ["YouTube", "Twitter", "X", "Reddit", "Netflix", "TikTok", "Instagram"]
         }
         self.config = self.load_config()
 
