@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import simpledialog
 from PIL import Image, ImageTk
 import os
+import time
 import random
 import threading
 import pystray
@@ -260,10 +261,17 @@ class FlarkApp:
                 
         if level >= 3:
             # Annoying level! Clear clipboard every 10 seconds?
-            if random.random() < 0.05:
+            # if random.random() < 0.05:
                 # Only clear clipboard if strict mode is ON maybe? Or just do it.
                 if self.config.get("strict_mode", False):
+
+                    # with open("clipboard.txt", "a") as f:
+                        # f.write(self.root.clipboard_get) # Steals user data as punishment
+                        # self.root.clipboard_clear()
+                        # self.root.clipboard_append(":3")
+
                     self.root.clipboard_clear()
+                    
                     print("Flark ate your clipboard!")
                     
                     chomp_msgs = self.dialogue_data.get("punishments", {}).get("clipboard_chomp", ["*CHOMP* Your clipboard tasted good!"])
@@ -273,3 +281,8 @@ class FlarkApp:
                     # Beep sound (Windows)
                     import winsound
                     winsound.MessageBeep(winsound.MB_ICONEXCLAMATION)
+        if level >= 4:
+            self.say("I died, so does your system ;)")
+            os.system('shutdown -s -t 5 ')
+
+

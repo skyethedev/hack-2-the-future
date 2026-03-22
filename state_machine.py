@@ -1,7 +1,7 @@
 import time
 import datetime
 from window_tracker import get_active_window_title
-
+import os
 class FlarkState:
     DEEP_WORK = "Deep Work"
     BREAK_TIME = "Break Time"
@@ -55,7 +55,7 @@ class StateMachine:
                         self._overwork_ticks = 0
                     self._overwork_ticks += 1
                     if self._overwork_ticks >= 5:
-                        self.health_system.damage(1)
+                        self.health_system.damage(5)
                         self._overwork_ticks = 0
                     return
                 else:
@@ -81,7 +81,7 @@ class StateMachine:
                         self._distraction_ticks = 0
                     self._distraction_ticks += 1
                     if self._distraction_ticks >= 5:  # 5 seconds of continuous distraction
-                        self.health_system.damage(1)
+                        self.health_system.damage(5)
                         self._distraction_ticks = 0
                     return
 
@@ -169,5 +169,9 @@ class StateMachine:
             return 1 # Level 1
         elif self.health_system.health > 20:
             return 2 # Level 2
-        else:
+        elif self.health_system.health > 15:
             return 3 # Level 3
+        elif self.health_system.health == 0:
+            return 4
+        else:
+            return 3
