@@ -1,10 +1,13 @@
 import tkinter as tk
 from tkinter import simpledialog
 from PIL import Image, ImageTk
+import winsound
+
 import os
 import time
 import random
 import threading
+import urllib
 import pystray
 from pystray import MenuItem as item
 
@@ -232,6 +235,11 @@ class FlarkApp:
             self.image_label.config(image=self.sprites[state])
 
     def apply_punishments(self):
+        if self.state_machine.current_state != FlarkState.NEGLECT:
+            if self.bubble_label.winfo_ismapped():
+                self.bubble_label.place_forget()
+            return
+
         level = self.state_machine.get_punishment_level()
         
         # Reset previous punishments if level drops
@@ -251,14 +259,37 @@ class FlarkApp:
                     self.say(random.choice(messages), 3000)
                 
         if level >= 2:
-            # Wandering / shaking
-            # if random.random() < 0.1:
-                dx = random.randint(-20, 20)
-                dy = random.randint(-20, 20)
-                nx = self.root.winfo_x() + dx
-                ny = self.root.winfo_y() + dy
-                self.root.geometry(f"+{nx}+{ny}")
-                
+            # Violent shaking back and forth
+            orig_x = self.root.winfo_x()
+            orig_y = self.root.winfo_y()
+            for _ in range(15):
+                dx = random.randint(-40, 40)
+                dy = random.randint(-40, 40)
+                self.root.geometry(f"+{orig_x + dx}+{orig_y + dy}")
+                self.root.update()
+                time.sleep(0.03)
+            # End up slightly displaced so he still wanders
+            nx = orig_x + random.randint(-15, 15)
+            ny = orig_y + random.randint(-15, 15)
+            self.root.geometry(f"+{nx}+{ny}")
+            random_action = random.randint(1,5)
+            winsound.MessageBeep(winsound.MB_ICONEXCLAMATION)
+
+            if random_action == 1:
+                random_link = random.randint(1,3)
+                if random_link == 1:
+                    winsound.MessageBeep(winsound.MB_ICONEXCLAMATION)
+
+                    urllib.urlopen("https://www.youtube.com/watch?v=jfKfPfyJRdk&pp=ygUMbG9maSBoaXAgaG9w")
+                if random_link == 2:
+                    winsound.MessageBeep(winsound.MB_ICONEXCLAMATION)
+
+                    urllib.urlopen("https://www.google.com/search?q=failure+clipart&client=firefox-b-d&hs=UJZp&udm=2&uact=5&oq=failure+clipart")
+                if random_link ==3:
+                    winsound.MessageBeep(winsound.MB_ICONEXCLAMATION)
+
+                    urllib.urlopen("https://img.freepik.com/premium-vector/disappointed-emoji-emoticon-showing-paper-with-f-failure-grade_1303870-1160.jpg")
+
         if level >= 3:
             # Annoying level! Clear clipboard every 10 seconds?
             # if random.random() < 0.05:
@@ -279,7 +310,6 @@ class FlarkApp:
                         self.say(random.choice(chomp_msgs), 2000)
                     
                     # Beep sound (Windows)
-                    import winsound
                     winsound.MessageBeep(winsound.MB_ICONEXCLAMATION)
         if level >= 4:
             self.say("I died, so does your system ;)")

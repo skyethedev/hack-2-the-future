@@ -71,5 +71,6 @@ class PomodoroTimer:
             self.time_left = self.break_duration
             
         self._notify()
-        # Optionally auto-start the next phase or wait for user input
-        # Currently, requires user to click start for next phase
+        
+        if not self.is_work_time:
+            self.start()
