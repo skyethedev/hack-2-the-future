@@ -1,0 +1,64 @@
+{
+  "events": {
+    "break_start": [
+      "Break time! Whoo!",
+      "Time to stretch those legs!",
+      "Finally, a break! Let's relax."
+    ],
+    "work_start": [
+      "Back to work!",
+      "Focus mode engaged.",
+      "Let's get this done!"
+    ],
+    "working_during_break": [
+      "Hey! You're on a break! Stop working!",
+      "I said take a break! Put the keyboard down!",
+      "Are you trying to burn out? Close that work app!"
+    ],
+    "distracted_during_work": [
+      "Focus! You're supposed to be working!",
+      "Get back to work! Your timer is ticking!",
+      "Stop slacking off, let's get things done!"
+    ]
+  },
+  "states": {
+    "Deep Work": [
+      "Shhh... I'm focusing.",
+      "*typing noises*",
+      "Do not disturb!"
+    ],
+    "Break Time": [
+      "Ah, relaxing...",
+      "Want to grab a coffee?",
+      "Stretching feels good."
+    ],
+    "Neglect": [
+      "Hello? Are you there?",
+      "I'm feeling ignored...",
+      "Did you forget about me?"
+    ],
+    "Late Night": [
+      "It's strictly past my bedtime...",
+      "*yawns* So sleepy...",
+      "Shouldn't we be asleep?"
+    ],
+    "Healthy": [
+      "Feeling great today!",
+      "What a beautiful day.",
+      "Ready for anything!"
+    ]
+  },
+  "punishments": {
+    "level_1": [
+      "You skipped a break, seriously?",
+      "My health is dropping!",
+      "You're going to burn out.",
+      "Please take a break."
+    ],
+    "clipboard_chomp": [
+      "*CHOMP* Your clipboard tasted good!",
+      "Mmm... clipboard data. Delicious.",
+      "I just ate your copy/paste. Take a break!"
+    ]
+  }
+}
