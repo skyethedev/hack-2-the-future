@@ -252,7 +252,7 @@ class FlarkApp:
                 
         if level >= 2:
             # Wandering / shaking
-            if random.random() < 0.1:
+            # if random.random() < 0.1:
                 dx = random.randint(-20, 20)
                 dy = random.randint(-20, 20)
                 nx = self.root.winfo_x() + dx
