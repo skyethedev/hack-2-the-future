@@ -63,6 +63,5 @@ Flark will appear in the bottom-right corner of your screen.
 ---
 
 ## 🎨 Sprites and Skins
-Flark looks for standard `.png` assets in the `sprites/<skin_name>/` folder. If they are missing, he will dynamically generate colorful placeholder circles representing his state (e.g., green for Break Time, blue for Deep Work, red for Neglect). 
-
-To customize Flark visually, replace the generated images in `sprites/classic/` with your own transparent `.png` files!
+Credit to CraftPix on Itch for our little guy
+https://free-game-assets.itch.io/free-tiny-hero-sprites-pixel-art?download
