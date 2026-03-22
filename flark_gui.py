@@ -271,7 +271,6 @@ class FlarkApp:
                         # self.root.clipboard_append(":3")
 
                     self.root.clipboard_clear()
-                    
                     print("Flark ate your clipboard!")
                     
                     chomp_msgs = self.dialogue_data.get("punishments", {}).get("clipboard_chomp", ["*CHOMP* Your clipboard tasted good!"])
